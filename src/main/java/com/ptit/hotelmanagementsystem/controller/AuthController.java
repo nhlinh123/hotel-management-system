@@ -2,6 +2,7 @@ package com.ptit.hotelmanagementsystem.controller;
 
 import com.ptit.hotelmanagementsystem.dto.AuthenticationRequest;
 import com.ptit.hotelmanagementsystem.dto.AuthenticationResponse;
+import com.ptit.hotelmanagementsystem.dto.BaseResponseModel;
 import com.ptit.hotelmanagementsystem.dto.RegisterRequest;
 import com.ptit.hotelmanagementsystem.model.User;
 import com.ptit.hotelmanagementsystem.repository.UserRepository;
@@ -9,6 +10,7 @@ import com.ptit.hotelmanagementsystem.service.UserService;
 import com.ptit.hotelmanagementsystem.util.JwtUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -41,34 +43,37 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest) throws Exception {
+    public ResponseEntity<BaseResponseModel<AuthenticationResponse>> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest) throws Exception {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword())
             );
         } catch (BadCredentialsException e) {
-            throw new Exception("Incorrect username or password", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(BaseResponseModel.unauthorized("Incorrect username or password"));
         }
 
         final UserDetails userDetails = userService.loadUserByUsername(authenticationRequest.getUsername());
         final String jwt = jwtUtil.generateToken(userDetails);
 
-        return ResponseEntity.ok(new AuthenticationResponse(jwt));
+        return ResponseEntity.ok(BaseResponseModel.success(new AuthenticationResponse(jwt), "Login successful"));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) throws Exception {
+    public ResponseEntity<BaseResponseModel<String>> registerUser(@RequestBody RegisterRequest registerRequest) throws Exception {
         if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
-            throw new Exception("Username already exists");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(BaseResponseModel.badRequest("Username already exists"));
         }
 
         User newUser = new User();
         newUser.setUsername(registerRequest.getUsername());
         newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        newUser.setRoles(registerRequest.getRoles() != null ? registerRequest.getRoles() : "ROLE_USER"); // Default role
+        newUser.setRoles(registerRequest.getRoles() != null ? registerRequest.getRoles() : "ROLE_USER");
 
         userRepository.save(newUser);
 
-        return ResponseEntity.ok("User registered successfully");
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(BaseResponseModel.created("User registered successfully"));
     }
 }

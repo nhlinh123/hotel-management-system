@@ -3,8 +3,10 @@ package com.ptit.hotelmanagementsystem.controller;
 import com.ptit.hotelmanagementsystem.dto.CreateRoomRequest;
 import com.ptit.hotelmanagementsystem.dto.RoomDto;
 import com.ptit.hotelmanagementsystem.dto.UpdateRoomRequest;
+import com.ptit.hotelmanagementsystem.dto.BaseResponseModel;
 import com.ptit.hotelmanagementsystem.service.RoomService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,42 +17,47 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/rooms")
 @Tag(name = "Room Management")
+@SecurityRequirement(name = "Bearer Authentication")
 public class RoomController {
 
     @Autowired
     private RoomService roomService;
 
     @PostMapping
-    public ResponseEntity<RoomDto> createRoom(@RequestBody CreateRoomRequest request) {
+    public ResponseEntity<BaseResponseModel<RoomDto>> createRoom(@RequestBody CreateRoomRequest request) {
         RoomDto createdRoom = roomService.createRoom(request);
-        return new ResponseEntity<>(createdRoom, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(BaseResponseModel.created(createdRoom, "Room created successfully"));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<RoomDto> getRoomById(@PathVariable Long id) {
+    public ResponseEntity<BaseResponseModel<RoomDto>> getRoomById(@PathVariable Long id) {
         return roomService.getRoomById(id)
-                .map(roomDto -> new ResponseEntity<>(roomDto, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+                .map(roomDto -> ResponseEntity.ok(BaseResponseModel.success(roomDto)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(BaseResponseModel.notFound("Room not found")));
     }
 
     @GetMapping
-    public ResponseEntity<List<RoomDto>> getAllRooms() {
+    public ResponseEntity<BaseResponseModel<List<RoomDto>>> getAllRooms() {
         List<RoomDto> rooms = roomService.getAllRooms();
-        return new ResponseEntity<>(rooms, HttpStatus.OK);
+        return ResponseEntity.ok(BaseResponseModel.success(rooms));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<RoomDto> updateRoom(@PathVariable Long id, @RequestBody UpdateRoomRequest request) {
+    public ResponseEntity<BaseResponseModel<RoomDto>> updateRoom(@PathVariable Long id, @RequestBody UpdateRoomRequest request) {
         return roomService.updateRoom(id, request)
-                .map(roomDto -> new ResponseEntity<>(roomDto, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+                .map(roomDto -> ResponseEntity.ok(BaseResponseModel.success(roomDto, "Room updated successfully")))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(BaseResponseModel.notFound("Room not found")));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRoom(@PathVariable Long id) {
+    public ResponseEntity<BaseResponseModel<String>> deleteRoom(@PathVariable Long id) {
         if (roomService.deleteRoom(id)) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            return ResponseEntity.ok(BaseResponseModel.success("Room deleted successfully"));
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(BaseResponseModel.notFound("Room not found"));
     }
 }
