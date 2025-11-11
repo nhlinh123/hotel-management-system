@@ -6,6 +6,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Data;
 
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Entity
 @Data
 public class Room {
@@ -21,4 +25,9 @@ public class Room {
     private double price;
 
     private boolean available;
+
+    @ManyToOne
+    @JoinColumn(name = "hotel_id")
+    @JsonBackReference
+    private Hotel hotel;
 }

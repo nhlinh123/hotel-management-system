@@ -5,7 +5,7 @@ import com.ptit.hotelmanagementsystem.dto.AuthenticationResponse;
 import com.ptit.hotelmanagementsystem.dto.RegisterRequest;
 import com.ptit.hotelmanagementsystem.model.User;
 import com.ptit.hotelmanagementsystem.repository.UserRepository;
-import com.ptit.hotelmanagementsystem.service.CustomUserDetailsService;
+import com.ptit.hotelmanagementsystem.service.UserService;
 import com.ptit.hotelmanagementsystem.util.JwtUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,7 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private CustomUserDetailsService userDetailsService;
+    private UserService userService;
 
     @Autowired
     private UserRepository userRepository;
@@ -50,7 +50,7 @@ public class AuthController {
             throw new Exception("Incorrect username or password", e);
         }
 
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationRequest.getUsername());
+        final UserDetails userDetails = userService.loadUserByUsername(authenticationRequest.getUsername());
         final String jwt = jwtUtil.generateToken(userDetails);
 
         return ResponseEntity.ok(new AuthenticationResponse(jwt));
