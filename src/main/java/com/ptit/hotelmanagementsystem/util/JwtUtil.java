@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @Component
 public class JwtUtil {
 
-    private final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private static final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
